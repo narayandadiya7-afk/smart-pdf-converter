@@ -64,17 +64,17 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
 
-  --primary: 221 83% 53%;
+  --primary: 161 94% 30%;
   --primary-foreground: 0 0% 100%;
-  --primary-glow: 243 75% 59%;
+  --primary-glow: 161 94% 30% / 0.3;
 
-  --secondary: 210 40% 96%;
+  --secondary: 210 40% 98%;
   --secondary-foreground: 222 47% 11%;
 
-  --muted: 210 40% 96%;
+  --muted: 210 40% 98%;
   --muted-foreground: 215 16% 47%;
 
-  --accent: 243 75% 59%;
+  --accent: 161 94% 30%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
@@ -82,50 +82,58 @@
 
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 221 83% 53%;
+  --ring: 161 94% 30%;
 
-  --radius: 0.75rem;
+  --radius: 1rem;
 
-  --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(243 75% 59%));
-  --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(221 83% 98%));
-  --shadow-elegant: 0 10px 30px -10px hsl(221 83% 53% / 0.2);
-  --shadow-card: 0 4px 20px -4px hsl(221 83% 53% / 0.1);
+  --gradient-primary: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  --gradient-hero: radial-gradient(at 0% 0%, hsla(161, 94%, 96%, 1) 0, transparent 50%), 
+                   radial-gradient(at 50% 0%, hsla(174, 84%, 96%, 1) 0, transparent 50%), 
+                   radial-gradient(at 100% 0%, hsla(161, 94%, 96%, 1) 0, transparent 50%);
+  --shadow-elegant: 0 20px 25px -5px rgb(5 150 105 / 0.1), 0 8px 10px -6px rgb(5 150 105 / 0.1);
+  --shadow-card: 0 10px 15px -3px rgb(5 150 105 / 0.05), 0 4px 6px -4px rgb(5 150 105 / 0.05);
+  --glass-bg: #ffffff;
+  --glass-border: rgba(5, 150, 105, 0.1);
 }
 
 .dark {
-  --background: 222 47% 11%;
+  --background: 222 47% 4%;
   --foreground: 0 0% 98%;
 
-  --card: 217 33% 17%;
+  --card: 222 47% 6%;
   --card-foreground: 0 0% 98%;
 
-  --popover: 217 33% 17%;
+  --popover: 222 47% 6%;
   --popover-foreground: 0 0% 98%;
 
-  --primary: 221 83% 53%;
+  --primary: 161 94% 40%;
   --primary-foreground: 0 0% 100%;
-  --primary-glow: 243 75% 59%;
+  --primary-glow: 161 94% 40% / 0.3;
 
-  --secondary: 217 33% 17%;
+  --secondary: 217 33% 12%;
   --secondary-foreground: 0 0% 98%;
 
-  --muted: 217 33% 17%;
+  --muted: 217 33% 12%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 243 75% 59%;
+  --accent: 161 94% 40%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 63% 31%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 221 83% 53%;
+  --border: 217 33% 15%;
+  --input: 217 33% 15%;
+  --ring: 161 94% 40%;
 
-  --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(243 75% 59%));
-  --gradient-hero: linear-gradient(180deg, hsl(222 47% 11%), hsl(217 33% 17%));
-  --shadow-elegant: 0 10px 30px -10px hsl(221 83% 53% / 0.3);
-  --shadow-card: 0 4px 20px -4px hsl(221 83% 53% / 0.15);
+  --gradient-primary: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  --gradient-hero: radial-gradient(at 0% 0%, hsla(222, 47%, 8%, 1) 0, transparent 50%), 
+                   radial-gradient(at 50% 0%, hsla(222, 47%, 5%, 1) 0, transparent 50%), 
+                   radial-gradient(at 100% 0%, hsla(222, 47%, 8%, 1) 0, transparent 50%);
+  --shadow-elegant: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+  --shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(16, 185, 129, 0.2);
 }
 
 @layer base {
@@ -134,7 +142,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-emerald-500/30;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -157,6 +165,32 @@
 
   .shadow-card {
     box-shadow: var(--shadow-card);
+  }
+
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .mesh-gradient {
+    background-color: hsla(221, 83%, 98%, 1);
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(221, 83%, 93%, 1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(243, 75%, 93%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(221, 83%, 93%, 1) 0, transparent 50%);
+  }
+
+  .dark .mesh-gradient {
+    background-color: hsla(222, 47%, 11%, 1);
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(222, 47%, 15%, 1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(222, 47%, 12%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(222, 47%, 15%, 1) 0, transparent 50%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400;
   }
 }
 

@@ -30,7 +30,7 @@ export const TOOLS: Tool[] = [
     description: "Separate pages from a PDF into individual documents",
     category: "organize",
     slug: "split-pdf",
-    icon: "SplitCellsOutlined",
+    icon: "ScissorOutlined",
     color: "from-rose-500 to-rose-600",
   },
   {
@@ -48,7 +48,7 @@ export const TOOLS: Tool[] = [
     description: "Extract specific pages from a PDF document",
     category: "organize",
     slug: "extract-pages",
-    icon: "CopyOutlined",
+    icon: "ExportOutlined",
     color: "from-indigo-500 to-indigo-600",
   },
   {
@@ -57,7 +57,7 @@ export const TOOLS: Tool[] = [
     description: "Reorder and reorganize pages in your PDF",
     category: "organize",
     slug: "organize-pdf",
-    icon: "OrderedListOutlined",
+    icon: "AppstoreOutlined",
     color: "from-cyan-500 to-cyan-600",
   },
   {
@@ -106,7 +106,7 @@ export const TOOLS: Tool[] = [
     description: "Convert JPG images to PDF format",
     category: "convert",
     slug: "jpg-to-pdf",
-    icon: "PictureOutlined",
+    icon: "FileImageOutlined",
     color: "from-pink-500 to-pink-600",
   },
   {
@@ -124,7 +124,7 @@ export const TOOLS: Tool[] = [
     description: "Convert PowerPoint presentations to PDF",
     category: "convert",
     slug: "ppt-to-pdf",
-    icon: "FileImageOutlined",
+    icon: "FilePptOutlined",
     color: "from-orange-500 to-orange-600",
   },
   {
@@ -133,7 +133,7 @@ export const TOOLS: Tool[] = [
     description: "Convert Excel spreadsheets to PDF",
     category: "convert",
     slug: "excel-to-pdf",
-    icon: "TableOutlined",
+    icon: "FileExcelOutlined",
     color: "from-green-500 to-green-600",
   },
   {
@@ -142,7 +142,7 @@ export const TOOLS: Tool[] = [
     description: "Convert HTML webpages to PDF documents",
     category: "convert",
     slug: "html-to-pdf",
-    icon: "CodeOutlined",
+    icon: "Html5Outlined",
     color: "from-violet-500 to-violet-600",
   },
 
@@ -153,7 +153,7 @@ export const TOOLS: Tool[] = [
     description: "Convert PDF pages to JPG images",
     category: "convert",
     slug: "pdf-to-jpg",
-    icon: "PictureOutlined",
+    icon: "FileImageOutlined",
     color: "from-pink-500 to-pink-600",
   },
   {
@@ -172,7 +172,7 @@ export const TOOLS: Tool[] = [
     description: "Convert PDF to PowerPoint presentation",
     category: "convert",
     slug: "pdf-to-ppt",
-    icon: "FileImageOutlined",
+    icon: "FilePptOutlined",
     color: "from-orange-500 to-orange-600",
   },
   {
@@ -181,7 +181,7 @@ export const TOOLS: Tool[] = [
     description: "Convert PDF to Excel spreadsheet",
     category: "convert",
     slug: "pdf-to-excel",
-    icon: "TableOutlined",
+    icon: "FileExcelOutlined",
     color: "from-green-500 to-green-600",
   },
   {
@@ -201,7 +201,7 @@ export const TOOLS: Tool[] = [
     description: "Rotate PDF pages to correct orientation",
     category: "edit",
     slug: "rotate-pdf",
-    icon: "SwapOutlined",
+    icon: "RotateRightOutlined",
     color: "from-cyan-500 to-cyan-600",
   },
   {
@@ -210,7 +210,7 @@ export const TOOLS: Tool[] = [
     description: "Add page numbering to your PDF",
     category: "edit",
     slug: "add-page-numbers",
-    icon: "NumberOutlined",
+    icon: "OrderedListOutlined",
     color: "from-indigo-500 to-indigo-600",
   },
   {
@@ -219,7 +219,7 @@ export const TOOLS: Tool[] = [
     description: "Add text or image watermarks to PDFs",
     category: "edit",
     slug: "add-watermark",
-    icon: "HighlightOutlined",
+    icon: "CopyrightOutlined",
     color: "from-blue-500 to-blue-600",
   },
   {
@@ -228,7 +228,7 @@ export const TOOLS: Tool[] = [
     description: "Crop and trim PDF pages",
     category: "edit",
     slug: "crop-pdf",
-    icon: "CropOutlined",
+    icon: "ScissorOutlined",
     color: "from-teal-500 to-teal-600",
   },
   {
@@ -266,7 +266,7 @@ export const TOOLS: Tool[] = [
   description: "Digitally sign PDF documents",
   category: "security",
   slug: "sign-pdf",
-  icon: "CheckCircleOutlined",
+  icon: "FormOutlined",
   color: "from-[#B45253] to-[#B45253]",
 },
   {
@@ -275,7 +275,7 @@ export const TOOLS: Tool[] = [
     description: "Permanently remove sensitive content",
     category: "security",
     slug: "redact-pdf",
-    icon: "ClearOutlined",
+    icon: "EyeInvisibleOutlined",
     color: "from-red-500 to-red-600",
   },
   {

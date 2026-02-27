@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Upload, RefreshCw, Download, Shield, Zap, Users, Lock } from "lucide-react";
+import { ArrowRight, Shield, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TOOLS } from "@/lib/toolsData";
@@ -97,46 +97,47 @@ const Home = () => {
       <div className="min-h-screen flex flex-col">
         
         {/* Hero Section */}
-        <section className="gradient-hero py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative mesh-gradient py-24 md:py-32 overflow-hidden">
+          <div className="absolute inset-0 bg-grid-slate-900/[0.02] dark:bg-grid-slate-100/[0.02] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-center max-w-4xl mx-auto"
             >
-            
-            {/* Professional Badge */}
-              <div className="mb-8 inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {/* Professional Badge */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="mb-8 inline-flex items-center gap-2 px-4 py-1.5 glass rounded-full shadow-sm"
+              >
+                <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                   Trusted by professionals worldwide
                 </span>
-              </div>
-               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
-              Professional PDF Tools{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                for Everyone
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-10 leading-relaxed max-w-3xl mx-auto">
-              Convert, compress, merge, split, edit, and secure your PDFs with
-              our fast, reliable, and completely free online tools. No
-              registration needed.
-            </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {/* <Link to="/converter"> */}
-                  <Button size="lg" className="gradient-primary hover:opacity-90 transition-opacity h-12 px-8 text-lg gap-2" onClick={() =>
-                document
-                  .getElementById("target")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }>
-                    Start Converting Free
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                {/* </Link> */}
+              </motion.div>
+              <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white mb-8 tracking-tight leading-[1.1]">
+                Professional PDF Tools{" "}<br/>
+                <span className="text-gradient from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400">
+                  for Everyone
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-12 leading-relaxed max-w-3xl mx-auto font-medium">
+                Convert, compress, merge, split, edit, and secure your PDFs with our fast, reliable, and completely free online tools.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <Button size="lg" className="h-14 px-10 " onClick={() =>
+                  document
+                    .getElementById("target")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }>
+                  Start Converting Free
+                  <ArrowRight className="h-6 w-6" />
+                </Button>
                 <Link href="/about">
-                  <Button size="lg" variant="outline" className="h-12 px-8 text-lg">
+                  <Button size="lg" variant="secondary" className="h-14 px-10">
                     Learn More
                   </Button>
                 </Link>
@@ -145,54 +146,67 @@ const Home = () => {
           </div>
         </section>
 
-       <div id="target" className="max-w-7xl mx-auto px-4 -mt-[2.5rem] relative z-20">
-        {/* Tabs */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12 bg-white rounded-2xl p-4 shadow-xl">
-          {tabs.map((tab) => (
-            <button
-              key={tab?.value}
-              onClick={() => setActiveTab(tab?.value)}
-              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                activeTab === tab?.value
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {tab?.label}
-            </button>
-          ))}
-        </div>
+        <div id="target" className="max-w-7xl mx-auto px-4 -mt-12 relative z-20">
+          {/* Tabs - Modern Segmented Control */}
+          <div className="flex flex-wrap justify-center gap-2 mb-16 glass p-2 rounded-2xl shadow-2xl">
+            {tabs.map((tab) => (
+              <button
+                key={tab?.value}
+                onClick={() => setActiveTab(tab?.value)}
+                className={`px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 relative cursor-pointer ${
+                  activeTab === tab?.value
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-500 hover:text-emerald-600 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                {tab?.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-          {filteredTools.map((tool, index) => (
-           <ToolCard
-                  key={tool.id}
+          {/* Tools Grid with AnimatePresence */}
+          <motion.div 
+            layout
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-32"
+          >
+            {filteredTools.map((tool, index) => (
+              <motion.div
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                key={tool.id}
+              >
+                <ToolCard
                   title={tool.title}
                   description={tool.description}
                   icon={tool.icon}
                   slug={tool.slug}
                   color={tool.color}
                 />
-          ))}
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </div>
 
       
         
 {/* Features Section */}
-        <section className="py-20 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">
+        <section className="py-32 bg-slate-50 dark:bg-slate-900/20 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-emerald-200 dark:via-emerald-800 to-transparent"></div>
+          
+          <div className="max-w-7xl mx-auto px-4 relative z-10">
+            <div className="text-center mb-24">
+              <h2 className="text-4xl md:text-5xl font-black mb-6 text-slate-900 dark:text-white tracking-tight">
                 Why Choose Us
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                We provide the fastest and most reliable PDF processing tools online
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium">
+                We provide the fastest and most reliable PDF processing tools online.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
               {features.map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -200,16 +214,16 @@ const Home = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="group"
+                  className="group relative"
                 >
-                  <div className={`${feature.bgColor} p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300 h-full`}>
-                    <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <feature.icon className="w-7 h-7 text-white" />
+                  <div className="glass dark:bg-slate-800/40 p-10 rounded-3xl border-white/20 dark:border-slate-700/30 hover:shadow-elegant transition-all duration-500 h-full flex flex-col items-start">
+                    <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl`}>
+                      <feature.icon className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">
+                    <h3 className="text-2xl font-black mb-4 text-slate-900 dark:text-white">
                       {feature.title}
                     </h3>
-                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg font-medium">
                       {feature.description}
                     </p>
                   </div>
@@ -220,19 +234,19 @@ const Home = () => {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-20 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+        <section className="py-32 bg-white dark:bg-slate-950">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-16"
+              className="text-center mb-24"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900 dark:text-white">
-                Frequently Asked Questions
+              <h2 className="text-4xl md:text-5xl font-black mb-6 text-slate-900 dark:text-white tracking-tight">
+                Frequently Asked <span className="text-emerald-600">Questions?</span>
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium">
                 Comprehensive answers to common inquiries
               </p>
             </motion.div>
@@ -244,17 +258,17 @@ const Home = () => {
               transition={{ duration: 0.5 }}
               className="max-w-3xl mx-auto"
             >
-              <Accordion type="single" collapsible className="space-y-4">
+              <Accordion type="single" collapsible className="space-y-6">
                 {faqs.map((faq, index) => (
                   <AccordionItem 
                     key={index} 
                     value={`item-${index}`}
-                    className="border border-slate-200 dark:border-slate-700 rounded-lg px-6 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                    className="border-0 bg-slate-50 dark:bg-slate-900/40 rounded-2xl px-8 hover:bg-slate-100 dark:hover:bg-slate-900/60 transition-colors"
                   >
-                    <AccordionTrigger className="text-left py-6 hover:no-underline text-slate-900 dark:text-white font-semibold">
+                    <AccordionTrigger className="text-left py-8 hover:no-underline text-slate-900 dark:text-white font-bold text-lg">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="text-slate-600 dark:text-slate-400 pb-6 leading-relaxed">
+                    <AccordionContent className="text-slate-600 dark:text-slate-400 pb-8 text-lg leading-relaxed font-medium">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
@@ -265,32 +279,37 @@ const Home = () => {
         </section>
         
 {/* CTA Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-600 to-purple-600 dark:from-blue-900 dark:via-blue-800 dark:to-purple-900"></div>
-
+      <section className="relative py-32 md:py-48 overflow-hidden bg-slate-950">
         {/* Animated background elements */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl -mr-48 -mt-48"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl -ml-48 -mb-48"></div>
+        <div className="absolute top-0 left-0 w-full h-full">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-600/20 rounded-full blur-[120px]"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-teal-600/10 rounded-full blur-[100px]"></div>
+        </div>
 
         <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              Ready to Transform Your PDFs?
+          <motion.div 
+             initial={{ opacity: 0, scale: 0.95 }}
+             whileInView={{ opacity: 1, scale: 1 }}
+             viewport={{ once: true }}
+             className="max-w-4xl mx-auto"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-white mb-8 leading-[1.1] tracking-tight">
+              Ready to Transform Your <br/>
+              <span className="text-emerald-500">PDFs?</span>
             </h2>
-            <p className="text-lg md:text-xl text-blue-100 mb-10">
-              Start processing your PDFs today with our free, fast, and secure
-              tools. No credit card required.
+            <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl mx-auto font-medium">
+              Start processing your PDFs today with our free, fast, and secure tools.
             </p>
             
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-bold shadow-xl hover:shadow-2xl transition-all px-8 py-8 rounded-lg inline-flex items-center gap-2 text-lg" onClick={() =>
+            <Button size="lg" className="bg-white text-slate-950 hover:bg-emerald-50 font-black shadow-2xl hover:scale-105 transition-all px-12 h-20 rounded-2xl inline-flex items-center gap-4 text-xl" onClick={() =>
                 document
                   .getElementById("target")
                   ?.scrollIntoView({ behavior: "smooth" })
               }>
-                  Get Started Now
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-          </div>
+              Get Started Now
+              <ArrowRight className="h-6 w-6" />
+            </Button>
+          </motion.div>
         </div>
       </section>
       </div>
