@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, X, Download, Image as ImageIcon, FileText, CheckCircle2, RotateCw } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, X, Download, Image as ImageIcon, FileText, CheckCircle2, RotateCw, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ImageFile {
@@ -20,12 +20,27 @@ export default function JpgToPdfTool() {
   const [showImageManager, setShowImageManager] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showDownloadSection, setShowDownloadSection] = useState(false);
+  const downloadSectionRef = useRef<HTMLDivElement>(null);
   
   // PDF Options
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [pageSize, setPageSize] = useState<'fit' | 'a4' | 'letter'>('fit');
   const [margin, setMargin] = useState<'none' | 'small' | 'big'>('none');
   const [mergeIntoOne, setMergeIntoOne] = useState(true);
+
+  // Auto-scroll to download section after conversion
+  useEffect(() => {
+    if (pdfUrl && downloadSectionRef.current) {
+      setShowDownloadSection(true);
+      setTimeout(() => {
+        downloadSectionRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
+    }
+  }, [pdfUrl]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -88,6 +103,14 @@ export default function JpgToPdfTool() {
     setImages(images.filter(img => img.id !== id));
   };
 
+  const rotateImage = (id: string) => {
+    setImages(images.map(img => 
+      img.id === id 
+        ? { ...img, rotation: (img.rotation + 90) % 360 }
+        : img
+    ));
+  };
+
   const moveImage = (index: number, direction: 'up' | 'down') => {
     const newImages = [...images];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
@@ -140,6 +163,85 @@ export default function JpgToPdfTool() {
     setDragOverIndex(null);
   };
 
+  // Helper function to process and embed image with proper quality
+  const processAndEmbedImage = async (img: ImageFile, pdfDoc: any) => {
+    const arrayBuffer = await img.file.arrayBuffer();
+    let image;
+    let actualWidth = 0;
+    let actualHeight = 0;
+    
+    // Get actual image dimensions
+    const tempImg = new Image();
+    await new Promise((resolve, reject) => {
+      tempImg.onload = () => {
+        actualWidth = tempImg.width;
+        actualHeight = tempImg.height;
+        resolve(null);
+      };
+      tempImg.onerror = reject;
+      tempImg.src = img.preview;
+    });
+    
+    // Apply rotation if needed
+    if (img.rotation !== 0) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas size based on rotation
+      if (img.rotation === 90 || img.rotation === 270) {
+        canvas.width = actualHeight;
+        canvas.height = actualWidth;
+      } else {
+        canvas.width = actualWidth;
+        canvas.height = actualHeight;
+      }
+      
+      ctx?.translate(canvas.width / 2, canvas.height / 2);
+      ctx?.rotate((img.rotation * Math.PI) / 180);
+      ctx?.drawImage(tempImg, -actualWidth / 2, -actualHeight / 2);
+      
+      const rotatedBlob = await new Promise<Blob>((resolve) => {
+        const format = img.file.type.startsWith('image/jp') ? 'image/jpeg' : 'image/png';
+        canvas.toBlob((blob) => resolve(blob!), format, 1.0);
+      });
+      
+      const rotatedBuffer = await rotatedBlob.arrayBuffer();
+      if (img.file.type.startsWith('image/jp')) {
+        image = await pdfDoc.embedJpg(rotatedBuffer);
+      } else {
+        image = await pdfDoc.embedPng(rotatedBuffer);
+      }
+      
+      // Update dimensions after rotation
+      if (img.rotation === 90 || img.rotation === 270) {
+        [actualWidth, actualHeight] = [actualHeight, actualWidth];
+      }
+    } else {
+      // Handle SVG files
+      if (img.file.type === 'image/svg+xml') {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = actualWidth || 800;
+        canvas.height = actualHeight || 600;
+        ctx?.drawImage(tempImg, 0, 0);
+        
+        const pngBlob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((blob) => resolve(blob!), 'image/png', 1.0);
+        });
+        
+        const pngBuffer = await pngBlob.arrayBuffer();
+        image = await pdfDoc.embedPng(pngBuffer);
+      } else if (img.file.type === 'image/png' || img.file.type === 'image/webp') {
+        image = await pdfDoc.embedPng(arrayBuffer);
+      } else {
+        image = await pdfDoc.embedJpg(arrayBuffer);
+      }
+    }
+    
+    return { image, actualWidth, actualHeight };
+  };
+
   const convertToPdf = async () => {
     if (images.length === 0) return;
     
@@ -168,55 +270,18 @@ export default function JpgToPdfTool() {
         const marginSize = margins[margin];
         
         for (const img of images) {
-          const arrayBuffer = await img.file.arrayBuffer();
+          const { image, actualWidth, actualHeight } = await processAndEmbedImage(img, pdfDoc);
           
-          let image;
-          
-          // Handle SVG files by converting to PNG first
-          if (img.file.type === 'image/svg+xml') {
-            try {
-              const svgBlob = new Blob([arrayBuffer], { type: 'image/svg+xml' });
-              const svgUrl = URL.createObjectURL(svgBlob);
-              
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              const svgImg = new Image();
-              
-              await new Promise((resolve, reject) => {
-                svgImg.onload = () => {
-                  canvas.width = svgImg.width || 800;
-                  canvas.height = svgImg.height || 600;
-                  ctx?.drawImage(svgImg, 0, 0);
-                  resolve(null);
-                };
-                svgImg.onerror = reject;
-                svgImg.src = svgUrl;
-              });
-              
-              URL.revokeObjectURL(svgUrl);
-              
-              const pngBlob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((blob) => resolve(blob!), 'image/png');
-              });
-              
-              const pngArrayBuffer = await pngBlob.arrayBuffer();
-              image = await pdfDoc.embedPng(pngArrayBuffer);
-            } catch (svgError) {
-              console.error('Error converting SVG:', svgError);
-              continue;
-            }
-          } else if (img.file.type === 'image/png') {
-            image = await pdfDoc.embedPng(arrayBuffer);
-          } else {
-            image = await pdfDoc.embedJpg(arrayBuffer);
-          }
+          // Convert pixels to points (72 DPI for PDF, 96 DPI for screen)
+          const imgWidthPt = (actualWidth * 72) / 96;
+          const imgHeightPt = (actualHeight * 72) / 96;
           
           let pageWidth, pageHeight;
           
           if (pageSize === 'fit') {
-            // Use image dimensions plus margins
-            pageWidth = image.width + (marginSize * 2);
-            pageHeight = image.height + (marginSize * 2);
+            // Use actual image dimensions in points
+            pageWidth = imgWidthPt + (marginSize * 2);
+            pageHeight = imgHeightPt + (marginSize * 2);
           } else {
             // Use standard page size
             const size = pageSizes[pageSize];
@@ -231,32 +296,32 @@ export default function JpgToPdfTool() {
           
           const page = pdfDoc.addPage([pageWidth, pageHeight]);
           
-          // Calculate image dimensions with margins
+          // Calculate available space with margins
           const availableWidth = pageWidth - (marginSize * 2);
           const availableHeight = pageHeight - (marginSize * 2);
           
-          let imgWidth = image.width;
-          let imgHeight = image.height;
+          let finalWidth = imgWidthPt;
+          let finalHeight = imgHeightPt;
           
           if (pageSize !== 'fit') {
-            // Scale image to fit within available space
-            const widthRatio = availableWidth / image.width;
-            const heightRatio = availableHeight / image.height;
+            // Scale image to fit within available space while maintaining aspect ratio
+            const widthRatio = availableWidth / imgWidthPt;
+            const heightRatio = availableHeight / imgHeightPt;
             const scale = Math.min(widthRatio, heightRatio);
             
-            imgWidth = image.width * scale;
-            imgHeight = image.height * scale;
+            finalWidth = imgWidthPt * scale;
+            finalHeight = imgHeightPt * scale;
           }
           
           // Center image on page with margins
-          const x = marginSize + (availableWidth - imgWidth) / 2;
-          const y = marginSize + (availableHeight - imgHeight) / 2;
+          const x = marginSize + (availableWidth - finalWidth) / 2;
+          const y = marginSize + (availableHeight - finalHeight) / 2;
           
           page.drawImage(image, {
-            x: x,
-            y: y,
-            width: imgWidth,
-            height: imgHeight,
+            x,
+            y,
+            width: finalWidth,
+            height: finalHeight,
           });
         }
         
@@ -289,54 +354,18 @@ export default function JpgToPdfTool() {
         for (let i = 0; i < images.length; i++) {
           const img = images[i];
           const pdfDoc = await PDFDocument.create();
-          const arrayBuffer = await img.file.arrayBuffer();
           
-          let image;
+          const { image, actualWidth, actualHeight } = await processAndEmbedImage(img, pdfDoc);
           
-          // Handle SVG files
-          if (img.file.type === 'image/svg+xml') {
-            try {
-              const svgBlob = new Blob([arrayBuffer], { type: 'image/svg+xml' });
-              const svgUrl = URL.createObjectURL(svgBlob);
-              
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              const svgImg = new Image();
-              
-              await new Promise((resolve, reject) => {
-                svgImg.onload = () => {
-                  canvas.width = svgImg.width || 800;
-                  canvas.height = svgImg.height || 600;
-                  ctx?.drawImage(svgImg, 0, 0);
-                  resolve(null);
-                };
-                svgImg.onerror = reject;
-                svgImg.src = svgUrl;
-              });
-              
-              URL.revokeObjectURL(svgUrl);
-              
-              const pngBlob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((blob) => resolve(blob!), 'image/png');
-              });
-              
-              const pngArrayBuffer = await pngBlob.arrayBuffer();
-              image = await pdfDoc.embedPng(pngArrayBuffer);
-            } catch (svgError) {
-              console.error('Error converting SVG:', svgError);
-              continue;
-            }
-          } else if (img.file.type === 'image/png') {
-            image = await pdfDoc.embedPng(arrayBuffer);
-          } else {
-            image = await pdfDoc.embedJpg(arrayBuffer);
-          }
+          // Convert pixels to points (72 DPI for PDF, 96 DPI for screen)
+          const imgWidthPt = (actualWidth * 72) / 96;
+          const imgHeightPt = (actualHeight * 72) / 96;
           
           let pageWidth, pageHeight;
           
           if (pageSize === 'fit') {
-            pageWidth = image.width + (marginSize * 2);
-            pageHeight = image.height + (marginSize * 2);
+            pageWidth = imgWidthPt + (marginSize * 2);
+            pageHeight = imgHeightPt + (marginSize * 2);
           } else {
             const size = pageSizes[pageSize];
             if (orientation === 'portrait') {
@@ -353,26 +382,26 @@ export default function JpgToPdfTool() {
           const availableWidth = pageWidth - (marginSize * 2);
           const availableHeight = pageHeight - (marginSize * 2);
           
-          let imgWidth = image.width;
-          let imgHeight = image.height;
+          let finalWidth = imgWidthPt;
+          let finalHeight = imgHeightPt;
           
           if (pageSize !== 'fit') {
-            const widthRatio = availableWidth / image.width;
-            const heightRatio = availableHeight / image.height;
+            const widthRatio = availableWidth / imgWidthPt;
+            const heightRatio = availableHeight / imgHeightPt;
             const scale = Math.min(widthRatio, heightRatio);
             
-            imgWidth = image.width * scale;
-            imgHeight = image.height * scale;
+            finalWidth = imgWidthPt * scale;
+            finalHeight = imgHeightPt * scale;
           }
           
-          const x = marginSize + (availableWidth - imgWidth) / 2;
-          const y = marginSize + (availableHeight - imgHeight) / 2;
+          const x = marginSize + (availableWidth - finalWidth) / 2;
+          const y = marginSize + (availableHeight - finalHeight) / 2;
           
           page.drawImage(image, {
-            x: x,
-            y: y,
-            width: imgWidth,
-            height: imgHeight,
+            x,
+            y,
+            width: finalWidth,
+            height: finalHeight,
           });
           
           const pdfBytes = await pdfDoc.save();
@@ -773,6 +802,7 @@ export default function JpgToPdfTool() {
                   src={img.preview}
                   alt={img.file.name}
                   className="w-full h-full object-cover pointer-events-none"
+                  style={{ transform: `rotate(${img.rotation}deg)` }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
@@ -785,13 +815,20 @@ export default function JpgToPdfTool() {
                   </div>
                 </div>
                 <button
+                  onClick={() => rotateImage(img.id)}
+                  className="absolute top-2 left-2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10 cursor-pointer"
+                  title="Rotate 90°"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => removeImage(img.id)}
                   className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10 cursor-pointer"
                   title="Remove"
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div className="absolute top-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold pointer-events-none">
+                <div className="absolute bottom-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold pointer-events-none">
                   {index + 1}
                 </div>
               </div>
