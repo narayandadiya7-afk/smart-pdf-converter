@@ -717,7 +717,7 @@ export default function JpgToPdfTool() {
               <Button
                 onClick={convertToPdf}
                 disabled={images.length === 0 || converting}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                className="group w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 size="lg"
               >
                 {converting ? (
@@ -726,10 +726,12 @@ export default function JpgToPdfTool() {
                     Converting to PDF...
                   </>
                 ) : (
-                  <>
-                    <FileText className="w-5 h-5 mr-3" />
-                    Convert {images.length} Image{images.length > 1 ? 's' : ''} to PDF
-                  </>
+                  <span className="flex items-center justify-center gap-3">
+                    Convert to PDF
+                    <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+                    </span>
+                  </span>
                 )}
               </Button>
             </div>
@@ -779,7 +781,7 @@ export default function JpgToPdfTool() {
         />
 
         {/* Images Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-h-[680px] overflow-y-auto pr-2 pt-20 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-800 scrollbar-thumb-rounded-full">
           {images.map((img, index) => (
             <div
               key={img.id}
@@ -789,48 +791,57 @@ export default function JpgToPdfTool() {
               onDragLeave={handleDragLeaveImage}
               onDrop={(e) => handleDropImage(e, index)}
               onDragEnd={handleDragEnd}
-              className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-200 hover:shadow-lg overflow-hidden cursor-move ${
+              className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-300 cursor-move ${
                 draggedIndex === index 
                   ? 'opacity-50 scale-95' 
                   : dragOverIndex === index
                   ? 'border-emerald-500 scale-105 shadow-xl'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
-              <div className="aspect-square relative">
-                <img
-                  src={img.preview}
-                  alt={img.file.name}
-                  className="w-full h-full object-cover pointer-events-none"
-                  style={{ transform: `rotate(${img.rotation}deg)` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-xs font-medium truncate">
-                      {img.file.name}
-                    </p>
-                    <p className="text-white/80 text-xs">
-                      {(img.file.size / 1024).toFixed(0)} KB
-                    </p>
-                  </div>
+              {/* Tooltip - File Info */}
+              <div className="absolute top-[-50px] left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover:top-[-60px] transition-all duration-300 z-30 pointer-events-none">
+                <div className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg shadow-xl whitespace-nowrap text-sm font-medium">
+                  {(img.file.size / 1024).toFixed(2)} KB - {img.file.name}
+                  <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
                 </div>
-                <button
-                  onClick={() => rotateImage(img.id)}
-                  className="absolute top-2 left-2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10 cursor-pointer"
-                  title="Rotate 90°"
-                >
-                  <RotateCw className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => removeImage(img.id)}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10 cursor-pointer"
-                  title="Remove"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="absolute bottom-2 left-2 bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold pointer-events-none">
-                  {index + 1}
+              </div>
+
+              {/* Image Container */}
+              <div className="p-6 pt-16 relative">
+                {/* Action Buttons - Above Image */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button
+                    onClick={() => rotateImage(img.id)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
+                    title="Rotate 90°"
+                  >
+                    <RotateCw className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => removeImage(img.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
+                    title="Remove"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
+
+                <div className="aspect-square relative overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                  <img
+                    src={img.preview}
+                    alt={img.file.name}
+                    className="max-w-full max-h-full object-contain pointer-events-none"
+                    style={{ transform: `rotate(${img.rotation}deg)` }}
+                  />
+                </div>
+              </div>
+
+              {/* Filename */}
+              <div className="px-6 pb-6 pt-0">
+                <p className="text-center text-slate-600 dark:text-slate-400 text-sm font-medium truncate">
+                  {img.file.name}
+                </p>
               </div>
             </div>
           ))}
