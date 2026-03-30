@@ -25,7 +25,7 @@ export default function JpgToPdfTool() {
   
   // PDF Options
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
-  const [pageSize, setPageSize] = useState<'fit' | 'a4' | 'letter'>('fit');
+  const [pageSize, setPageSize] = useState<'fit' | 'a4' | 'letter'>('a4');
   const [margin, setMargin] = useState<'none' | 'small' | 'big'>('none');
   const [mergeIntoOne, setMergeIntoOne] = useState(true);
 
@@ -439,13 +439,18 @@ export default function JpgToPdfTool() {
 
   const clearAll = () => {
     images.forEach(img => URL.revokeObjectURL(img.preview));
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setImages([]);
     setPdfUrl(null);
     setPdfBlob(null);
     setShowImageManager(false);
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-    }
+    setShowDownloadSection(false);
+    setOrientation('portrait');
+    setPageSize('a4');
+    setMargin('none');
+    setMergeIntoOne(true);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const addMoreImages = () => {
@@ -479,13 +484,45 @@ export default function JpgToPdfTool() {
 
   const totalSize = images.reduce((acc, img) => acc + img.file.size, 0);
 
+  // Compute inner preview card dimensions based on PDF settings
+  const getPreviewPageStyle = () => {
+    const maxH = 270;
+    const maxW = 220;
+
+    let ratio: number;
+    if (pageSize === 'fit') {
+      ratio = 1;
+    } else if (pageSize === 'a4') {
+      ratio = 297 / 210; // ~1.414
+    } else {
+      ratio = 279.4 / 215; // letter ~1.299
+    }
+
+    const isLandscape = orientation === 'landscape' && pageSize !== 'fit';
+    if (isLandscape) ratio = 1 / ratio;
+
+    let w: number, h: number;
+    if (ratio >= 1) {
+      h = maxH;
+      w = Math.round(maxH / ratio);
+    } else {
+      w = maxW;
+      h = Math.round(maxW * ratio);
+    }
+
+    const marginMap: Record<string, number> = { none: 0, small: 8, big: 18 };
+    const m = marginMap[margin];
+
+    return { w, h, m };
+  };
+
   // Show upload zone if no images or not in image manager view
   if (!showImageManager || images.length === 0) {
     return (
       <div className="space-y-8">
         {/* Upload Zone */}
         <div 
-          className={`relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-12 border-2 border-dashed transition-all duration-300 ${
+          className={`relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 border-2 border-dashed transition-all duration-300 ${
             dragOver 
               ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 scale-[1.02]' 
               : 'border-slate-300 dark:border-slate-600 hover:border-emerald-400 dark:hover:border-emerald-500'
@@ -542,28 +579,166 @@ export default function JpgToPdfTool() {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={addMoreImages}
-              className="flex-1 sm:flex-none text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Add More
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearAll}
-              className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear All
-            </Button>
+            {pdfUrl ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAll}
+                className="flex-1 sm:flex-none text-slate-600 dark:text-slate-300 hover:border-emerald-400 hover:text-white border-slate-300 dark:border-slate-600 transition-all duration-200"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Tool
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addMoreImages}
+                  className="flex-1 sm:flex-none text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Add More
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAll}
+                  className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Clear All
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Convert Button or Success Message - Top Position */}
+        {/* Images Grid */}
+        {!pdfUrl && (
+          <div className="space-y-3">
+            {/* Drag hint */}
+            <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              Drag cards to reorder · hover for actions
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-6">
+              {images.map((img, index) => (
+                <div
+                  key={img.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOverImage(e, index)}
+                  onDragLeave={handleDragLeaveImage}
+                  onDrop={(e) => handleDropImage(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-300 cursor-move flex flex-col items-center ${
+                    draggedIndex === index
+                      ? 'opacity-50 scale-95'
+                      : dragOverIndex === index
+                      ? 'border-emerald-500 scale-105 shadow-xl'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
+                  style={{ width: 200, height: 260, padding: '16px 16px 12px 16px' }}
+                >
+                  {/* Tooltip */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 pointer-events-none whitespace-nowrap">
+                    <div className="bg-slate-800 dark:bg-slate-700 text-white px-3 py-1.5 rounded-lg shadow-xl text-sm font-medium">
+                      {(img.file.size / 1024).toFixed(2)} KB - {img.file.name}
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      onClick={() => rotateImage(img.id)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:scale-110 active:scale-95 cursor-pointer transition-all"
+                      title="Rotate 90°"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => removeImage(img.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg hover:scale-110 active:scale-95 cursor-pointer transition-all"
+                      title="Remove"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Inner white page card */}
+                  {(() => {
+                    if (pageSize === 'fit') {
+                      const isLandscape = orientation === 'landscape';
+                      const marginMap: Record<string, number> = { none: 0, small: 3, big: 7 };
+                      const m = marginMap[margin];
+                      const w = isLandscape ? 185 : 130;
+                      const h = isLandscape ? 130 : 185;
+                      return (
+                        <div className="flex-1 flex items-center justify-center w-full">
+                          <div
+                            className="overflow-hidden flex-shrink-0 transition-all duration-300"
+                            style={{ width: w, height: h, padding: m, transform: `rotate(${img.rotation}deg)` }}
+                          >
+                            <img
+                              src={img.preview}
+                              alt={img.file.name}
+                              className="w-full h-full object-contain pointer-events-none"
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const marginMap: Record<string, number> = { none: 0, small: 3, big: 7 };
+                    const m = marginMap[margin];
+                    const isLandscape = orientation === 'landscape';
+
+                    let aw = 210, ah = 297;
+                    if (pageSize === 'letter') { aw = 215; ah = 279.4; }
+                    if (isLandscape) { [aw, ah] = [ah, aw]; }
+
+                    // Portrait: fix width so both sizes same width, height differs
+                    // Landscape: fix height so both sizes same height, width differs
+                    const fixedW = 130;
+                    const fixedH = 130;
+                    const finalScale = isLandscape ? fixedH / ah : fixedW / aw;
+                    const w = Math.round(aw * finalScale);
+                    const h = Math.round(ah * finalScale);
+
+                    return (
+                      <div className="flex-1 flex items-center justify-center w-full">
+                        <div
+                          className="bg-white shadow-sm border border-slate-200 overflow-hidden flex-shrink-0 transition-transform duration-300"
+                          style={{ width: w, height: h, padding: m, transform: `rotate(${img.rotation}deg)` }}
+                        >
+                          <img
+                            src={img.preview}
+                            alt={img.file.name}
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Filename - always at bottom */}
+                  <p className="text-center text-slate-600 dark:text-slate-400 text-xs font-medium truncate w-full px-1 mt-auto">
+                    {img.file.name}
+                  </p>
+                </div>
+              ))}
+
+
+            </div>
+          </div>
+        )}
+
+        {/* Convert Button or Success Message */}
         {!pdfUrl ? (
           <div className="space-y-6">
             {/* PDF Options */}
@@ -647,7 +822,11 @@ export default function JpgToPdfTool() {
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <ImageIcon className={`w-6 h-6 ${margin === 'none' ? 'text-emerald-500' : 'text-slate-400'}`} />
+                      {/* No margin: image fills the page */}
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={margin === 'none' ? 'text-emerald-500' : 'text-slate-400'}>
+                        <rect x="2" y="2" width="20" height="20" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+                        <rect x="2" y="2" width="20" height="20" rx="1" fill="currentColor" opacity="0.2"/>
+                      </svg>
                       <span className="text-sm font-medium text-slate-900 dark:text-white">No margin</span>
                     </div>
                   </button>
@@ -660,7 +839,11 @@ export default function JpgToPdfTool() {
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <ImageIcon className={`w-5 h-5 ${margin === 'small' ? 'text-emerald-500' : 'text-slate-400'}`} />
+                      {/* Small margin: small gap between page border and inner content */}
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={margin === 'small' ? 'text-emerald-500' : 'text-slate-400'}>
+                        <rect x="2" y="2" width="20" height="20" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+                        <rect x="5" y="5" width="14" height="14" rx="0.5" fill="currentColor" opacity="0.2"/>
+                      </svg>
                       <span className="text-sm font-medium text-slate-900 dark:text-white">Small</span>
                     </div>
                   </button>
@@ -673,7 +856,11 @@ export default function JpgToPdfTool() {
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <ImageIcon className={`w-4 h-4 ${margin === 'big' ? 'text-emerald-500' : 'text-slate-400'}`} />
+                      {/* Big margin: large gap between page border and inner content */}
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={margin === 'big' ? 'text-emerald-500' : 'text-slate-400'}>
+                        <rect x="2" y="2" width="20" height="20" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+                        <rect x="8" y="8" width="8" height="8" rx="0.5" fill="currentColor" opacity="0.2"/>
+                      </svg>
                       <span className="text-sm font-medium text-slate-900 dark:text-white">Big</span>
                     </div>
                   </button>
@@ -717,7 +904,7 @@ export default function JpgToPdfTool() {
               <Button
                 onClick={convertToPdf}
                 disabled={images.length === 0 || converting}
-                className="group w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="group w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:opacity-100 active:scale-[0.98]"
                 size="lg"
               >
                 {converting ? (
@@ -728,7 +915,7 @@ export default function JpgToPdfTool() {
                 ) : (
                   <span className="flex items-center justify-center gap-3">
                     Convert to PDF
-                    <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                    <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300">
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
                     </span>
                   </span>
@@ -738,7 +925,7 @@ export default function JpgToPdfTool() {
           </div>
         ) : (
           /* Success Message - Top Position */
-          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-3xl border-2 border-emerald-200 dark:border-emerald-800 shadow-xl">
+          <div ref={downloadSectionRef} className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-3xl border-2 border-emerald-200 dark:border-emerald-800 shadow-xl">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400 rounded-full blur-3xl opacity-10"></div>
             <div className="relative p-8">
               <div className="flex items-start gap-6">
@@ -779,73 +966,6 @@ export default function JpgToPdfTool() {
           onChange={handleAddMoreImages}
           className="hidden"
         />
-
-        {/* Images Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-h-[680px] overflow-y-auto pr-2 pt-20 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-slate-100 dark:scrollbar-track-slate-800 scrollbar-thumb-rounded-full">
-          {images.map((img, index) => (
-            <div
-              key={img.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={(e) => handleDragOverImage(e, index)}
-              onDragLeave={handleDragLeaveImage}
-              onDrop={(e) => handleDropImage(e, index)}
-              onDragEnd={handleDragEnd}
-              className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-300 cursor-move ${
-                draggedIndex === index 
-                  ? 'opacity-50 scale-95' 
-                  : dragOverIndex === index
-                  ? 'border-emerald-500 scale-105 shadow-xl'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
-            >
-              {/* Tooltip - File Info */}
-              <div className="absolute top-[-50px] left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 group-hover:top-[-60px] transition-all duration-300 z-30 pointer-events-none">
-                <div className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg shadow-xl whitespace-nowrap text-sm font-medium">
-                  {(img.file.size / 1024).toFixed(2)} KB - {img.file.name}
-                  <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
-                </div>
-              </div>
-
-              {/* Image Container */}
-              <div className="p-6 pt-16 relative">
-                {/* Action Buttons - Above Image */}
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button
-                    onClick={() => rotateImage(img.id)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-                    title="Rotate 90°"
-                  >
-                    <RotateCw className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => removeImage(img.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-                    title="Remove"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="aspect-square relative overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                  <img
-                    src={img.preview}
-                    alt={img.file.name}
-                    className="max-w-full max-h-full object-contain pointer-events-none"
-                    style={{ transform: `rotate(${img.rotation}deg)` }}
-                  />
-                </div>
-              </div>
-
-              {/* Filename */}
-              <div className="px-6 pb-6 pt-0">
-                <p className="text-center text-slate-600 dark:text-slate-400 text-sm font-medium truncate">
-                  {img.file.name}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
