@@ -484,6 +484,38 @@ export default function JpgToPdfTool() {
 
   const totalSize = images.reduce((acc, img) => acc + img.file.size, 0);
 
+  // Compute inner preview card dimensions based on PDF settings
+  const getPreviewPageStyle = () => {
+    const maxH = 270;
+    const maxW = 220;
+
+    let ratio: number;
+    if (pageSize === 'fit') {
+      ratio = 1;
+    } else if (pageSize === 'a4') {
+      ratio = 297 / 210; // ~1.414
+    } else {
+      ratio = 279.4 / 215; // letter ~1.299
+    }
+
+    const isLandscape = orientation === 'landscape' && pageSize !== 'fit';
+    if (isLandscape) ratio = 1 / ratio;
+
+    let w: number, h: number;
+    if (ratio >= 1) {
+      h = maxH;
+      w = Math.round(maxH / ratio);
+    } else {
+      w = maxW;
+      h = Math.round(maxW * ratio);
+    }
+
+    const marginMap: Record<string, number> = { none: 0, small: 8, big: 18 };
+    const m = marginMap[margin];
+
+    return { w, h, m };
+  };
+
   // Show upload zone if no images or not in image manager view
   if (!showImageManager || images.length === 0) {
     return (
@@ -593,7 +625,7 @@ export default function JpgToPdfTool() {
               Drag cards to reorder · hover for actions
             </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="flex flex-wrap justify-center gap-6">
               {images.map((img, index) => (
                 <div
                   key={img.id}
@@ -603,58 +635,101 @@ export default function JpgToPdfTool() {
                   onDragLeave={handleDragLeaveImage}
                   onDrop={(e) => handleDropImage(e, index)}
                   onDragEnd={handleDragEnd}
-                  className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-300 cursor-move ${
+                  className={`group relative bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all duration-300 cursor-move flex flex-col items-center ${
                     draggedIndex === index
                       ? 'opacity-50 scale-95'
                       : dragOverIndex === index
                       ? 'border-emerald-500 scale-105 shadow-xl'
                       : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
+                  style={{ width: 200, height: 260, padding: '16px 16px 12px 16px' }}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 pointer-events-none whitespace-nowrap">
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 pointer-events-none whitespace-nowrap">
                     <div className="bg-slate-800 dark:bg-slate-700 text-white px-3 py-1.5 rounded-lg shadow-xl text-sm font-medium">
                       {(img.file.size / 1024).toFixed(2)} KB - {img.file.name}
                       <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-800 dark:bg-slate-700 rotate-45"></div>
                     </div>
                   </div>
 
-                  {/* Image Container */}
-                  <div className="p-6 pt-16 relative">
-                    {/* Action Buttons - Above Image */}
-                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <button
-                        onClick={() => rotateImage(img.id)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-                        title="Rotate 90°"
-                      >
-                        <RotateCw className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => removeImage(img.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white p-2.5 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 cursor-pointer"
-                        title="Remove"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="aspect-square relative overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                      <img
-                        src={img.preview}
-                        alt={img.file.name}
-                        className="max-w-full max-h-full object-contain pointer-events-none"
-                        style={{ transform: `rotate(${img.rotation}deg)` }}
-                      />
-                    </div>
+                  {/* Action Buttons */}
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      onClick={() => rotateImage(img.id)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:scale-110 active:scale-95 cursor-pointer transition-all"
+                      title="Rotate 90°"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => removeImage(img.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg hover:scale-110 active:scale-95 cursor-pointer transition-all"
+                      title="Remove"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
 
-                  {/* Filename */}
-                  <div className="px-6 pb-6 pt-0">
-                    <p className="text-center text-slate-600 dark:text-slate-400 text-sm font-medium truncate">
-                      {img.file.name}
-                    </p>
-                  </div>
+                  {/* Inner white page card */}
+                  {(() => {
+                    if (pageSize === 'fit') {
+                      const isLandscape = orientation === 'landscape';
+                      const marginMap: Record<string, number> = { none: 0, small: 3, big: 7 };
+                      const m = marginMap[margin];
+                      const w = isLandscape ? 185 : 130;
+                      const h = isLandscape ? 130 : 185;
+                      return (
+                        <div className="flex-1 flex items-center justify-center w-full">
+                          <div
+                            className="overflow-hidden flex-shrink-0 transition-all duration-300"
+                            style={{ width: w, height: h, padding: m, transform: `rotate(${img.rotation}deg)` }}
+                          >
+                            <img
+                              src={img.preview}
+                              alt={img.file.name}
+                              className="w-full h-full object-contain pointer-events-none"
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const marginMap: Record<string, number> = { none: 0, small: 3, big: 7 };
+                    const m = marginMap[margin];
+                    const isLandscape = orientation === 'landscape';
+
+                    let aw = 210, ah = 297;
+                    if (pageSize === 'letter') { aw = 215; ah = 279.4; }
+                    if (isLandscape) { [aw, ah] = [ah, aw]; }
+
+                    // Portrait: fix width so both sizes same width, height differs
+                    // Landscape: fix height so both sizes same height, width differs
+                    const fixedW = 130;
+                    const fixedH = 130;
+                    const finalScale = isLandscape ? fixedH / ah : fixedW / aw;
+                    const w = Math.round(aw * finalScale);
+                    const h = Math.round(ah * finalScale);
+
+                    return (
+                      <div className="flex-1 flex items-center justify-center w-full">
+                        <div
+                          className="bg-white shadow-sm border border-slate-200 overflow-hidden flex-shrink-0 transition-transform duration-300"
+                          style={{ width: w, height: h, padding: m, transform: `rotate(${img.rotation}deg)` }}
+                        >
+                          <img
+                            src={img.preview}
+                            alt={img.file.name}
+                            className="w-full h-full object-contain pointer-events-none"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Filename - always at bottom */}
+                  <p className="text-center text-slate-600 dark:text-slate-400 text-xs font-medium truncate w-full px-1 mt-auto">
+                    {img.file.name}
+                  </p>
                 </div>
               ))}
 
